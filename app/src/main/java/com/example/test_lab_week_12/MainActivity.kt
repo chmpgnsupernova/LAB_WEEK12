@@ -8,6 +8,10 @@ import com.example.test_lab_week_12.model.Movie
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.snackbar.Snackbar
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.Lifecycle
+import kotlinx.coroutines.launch
 import java.util.Calendar
 
 class MainActivity : AppCompatActivity() {
@@ -33,34 +37,33 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         )[MovieViewModel::class.java]
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
 
-        movieViewModel.popularMovies.observe(this) { popularMovies ->
-            val currentYear = Calendar.getInstance().get(Calendar.YEAR).toString()
-
-            // INI LOGIC FILTER & SORT-NYA BRE
-            movieAdapter.addMovies(
-                popularMovies
-                    .filter { movie ->
-                        movie.releaseDate?.startsWith(currentYear) == true
+                launch {
+                    movieViewModel.popularMovies.collect { movies ->
+                        movieAdapter.addMovies(movies)
                     }
-                    .sortedByDescending { it.popularity }
-            )
-        }
+                }
 
-        movieViewModel.error.observe(this) { error ->
-            if (error.isNotEmpty()) {
-                Snackbar.make(recyclerView, error, Snackbar.LENGTH_LONG).show()
+                launch {
+                    movieViewModel.error.collect { error ->
+                        if (error.isNotEmpty()) {
+                            Snackbar.make(recyclerView, error, Snackbar.LENGTH_LONG).show()
+                        }
+                    }
+                }
             }
         }
     }
 
-    private fun openMovieDetails(movie: Movie) {
-        val intent = Intent(this, DetailsActivity::class.java).apply {
-            putExtra(DetailsActivity.EXTRA_TITLE, movie.title)
-            putExtra(DetailsActivity.EXTRA_RELEASE, movie.releaseDate)
-            putExtra(DetailsActivity.EXTRA_OVERVIEW, movie.overview)
-            putExtra(DetailsActivity.EXTRA_POSTER, movie.posterPath)
+        private fun openMovieDetails(movie: Movie) {
+            val intent = Intent(this, DetailsActivity::class.java).apply {
+                putExtra(DetailsActivity.EXTRA_TITLE, movie.title)
+                putExtra(DetailsActivity.EXTRA_RELEASE, movie.releaseDate)
+                putExtra(DetailsActivity.EXTRA_OVERVIEW, movie.overview)
+                putExtra(DetailsActivity.EXTRA_POSTER, movie.posterPath)
+            }
+            startActivity(intent)
         }
-        startActivity(intent)
     }
-}

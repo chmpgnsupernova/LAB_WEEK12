@@ -4,25 +4,18 @@ import com.example.test_lab_week_12.api.MovieService
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.example.test_lab_week_12.model.Movie
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.Dispatchers
 
 class MovieRepository(private val movieService: MovieService) {
-    // PASTE API KEY LU DISINI NGAB
     private val apiKey = "da772e5c821799c484dcbf3cbd674626"
-
-    private val movieLiveData = MutableLiveData<List<Movie>>()
-    val movies: LiveData<List<Movie>>
-        get() = movieLiveData
-
-    private val errorLiveData = MutableLiveData<String>()
-    val error: LiveData<String>
-        get() = errorLiveData
-
-    suspend fun fetchMovies() {
-        try {
+    suspend fun fetchMovies(): Flow<List<Movie>> {
+        return flow {
             val popularMovies = movieService.getPopularMovies(apiKey)
-            movieLiveData.postValue(popularMovies.results)
-        } catch (exception: Exception) {
-            errorLiveData.postValue("An error occurred: ${exception.message}")
-        }
+            // Emit itu ibarat "nembakin" datanya ke yang minta
+            emit(popularMovies.results)
+        }.flowOn(Dispatchers.IO) // Jalanin di background thread
     }
 }
