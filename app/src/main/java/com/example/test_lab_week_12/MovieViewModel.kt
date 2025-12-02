@@ -26,15 +26,32 @@ class MovieViewModel(private val movieRepository: MovieRepository) : ViewModel()
     }
 
     private fun fetchPopularMovies() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             movieRepository.fetchMovies()
                 .catch { exception ->
-                    // Kalo error di tengah jalan, tangkep di sini
                     _error.value = "An exception occurred: ${exception.message}"
                 }
                 .collect { movies ->
-                    // Kalo sukses, simpen datanya
-                    _popularMovies.value = movies
+                    // 🔥 START ASSIGNMENT LOGIC 🔥
+
+                    // 1. Ambil tahun sekarang (misal: "2025")
+                    val currentYear = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR).toString()
+
+                    // 2. Filter & Sort datanya
+                    val finalMovies = movies
+                        .filter { movie ->
+                            // Cuma ambil film yang rilis tahun ini
+                            movie.releaseDate?.startsWith(currentYear) == true
+                        }
+                        .sortedByDescending {
+                            // Urutin berdasarkan popularitas tertinggi
+                            it.popularity
+                        }
+
+                    // 3. Masukin data yang udah mateng ke StateFlow
+                    _popularMovies.value = finalMovies
+
+                    // 🔥 END ASSIGNMENT LOGIC 🔥
                 }
         }
     }
